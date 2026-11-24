@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0c0a14" />
+  <title>Doubly Linked List Visualizer</title>
+  <!-- Inline favicon: stops the browser asking for /favicon.ico (404 in console) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c0a14'/%3E%3Cpath d='M6 12h17m-4-4 4 4-4 4' stroke='%23a78bfa' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M26 21H9m4-4-4 4 4 4' stroke='%23f472b6' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <!-- Member 2 base styles, then Member 3 visual layer (ORDER MATTERS) -->
+  <link rel="stylesheet" href="raja.css" />
+  <link rel="stylesheet" href="dll-effects.css" />
+</head>
+<body>
+  <!-- Navigation Bar & Live List Metadata -->
+  <header class="navbar">
+    <div class="brand">
+      <h1><span>Doubly Linked List <em>Visualizer</em></span></h1>
+      <span class="subtitle">Interactive Pointer &amp; Step Debugger</span>
+    </div>
+    <div class="list-status-bar" role="group" aria-label="List Metadata">
+      <span class="status-pill">Size: <strong id="list-size">3</strong></span>
+      <span class="status-pill">Head ID: <strong id="head-id">1</strong></span>
+      <span class="status-pill">Tail ID: <strong id="tail-id">3</strong></span>
+    </div>
+  </header>
+
+  <!-- Input Control Panel Mapped to DllController Endpoints -->
+  <section class="controls-panel" aria-label="Doubly Linked List Operations">
+    <!-- Insert Controls (/insert-head, /insert-tail, /insert-position) -->
+    <div class="control-group">
+      <label for="node-data-input" class="sr-only">Node Data</label>
+      <input type="number" id="node-data-input" placeholder="Value (data)" />
+
+      <label for="node-position-input" class="sr-only">1-Based Position</label>
+      <input type="number" id="node-position-input" min="1" placeholder="Pos (1-based)" />
+
+      <button type="button" id="btn-insert-head" class="btn btn-primary">Insert Head</button>
+      <button type="button" id="btn-insert-tail" class="btn btn-primary">Insert Tail</button>
+      <button type="button" id="btn-insert-pos" class="btn btn-secondary">Insert at Pos</button>
+    </div>
+
+    <!-- Delete & Clear Controls (/delete, /clear) -->
+    <div class="control-group">
+      <label for="delete-data-input" class="sr-only">Delete Value</label>
+      <input type="number" id="delete-data-input" placeholder="Delete value" />
+      <button type="button" id="btn-delete" class="btn btn-danger">Delete</button>
+      <button type="button" id="btn-clear" class="btn btn-outline">Clear List</button>
+    </div>
+
+    <!-- Traversal Controls (/get, /get-backward) -->
+    <div class="control-group">
+      <button type="button" id="btn-traverse-forward" class="btn btn-accent">Traverse Forward</button>
+      <button type="button" id="btn-traverse-backward" class="btn btn-accent">Traverse Backward</button>
+    </div>
+  </section>
+
+  <!-- Step Description & API Feedback Banner (Matches DllResponseDto & OperationStepDto) -->
+  <section class="feedback-bar" aria-live="polite">
+    <span id="step-badge" class="step-badge is-info">READY</span>
+    <p id="step-description">Enter a value above to start building the Doubly Linked List.</p>
+  </section>
+
+  <!-- Canvas + Algorithm side box -->
+  <div class="workspace">
+  <!-- Visual Canvas for 3-Partition Node Boxes -->
+  <main class="canvas-wrapper">
+    <div class="op-chip"><span class="chip-label">Operation</span><span id="op-chip">Idle</span></div>
+    <div class="legend" aria-hidden="true"><span class="lg lg-next">NEXT</span><span class="lg lg-prev">PREV</span><span class="lg lg-free">FREE NODE</span></div>
+    <div class="canvas-scroll">
+    <div class="canvas" id="dll-canvas" role="group" aria-label="Doubly Linked List Visual Canvas">
+
+      <!--
+        NOTE FOR MEMBER 4:
+        The 3 nodes below are a PREVIEW so the page does not look empty.
+        On page load, call the backend and replace everything inside #dll-canvas
+        (and the Size / Head ID / Tail ID values) with the real list state.
+        Keep the same structure and class names when generating nodes.
+      -->
+
+      <!-- Left NULL Terminal -->
+      <div class="null-terminal" id="head-null">NULL</div>
+
+      <!-- NODE 1 (HEAD) -->
+      <div class="node-unit node-enter from-left" data-node-id="1" style="--i:0">
+        <div class="pointer-badges">
+          <span class="badge badge-head">HEAD</span>
+        </div>
+        <div class="node-box">
+          <div class="node-cell node-prev">
+            <span class="cell-label">PREV</span>
+            <span class="cell-value is-null">NULL</span>
+          </div>
+          <div class="node-cell node-data">
+            <span class="cell-label">ID #1</span>
+            <span class="cell-value">45</span>
+          </div>
+          <div class="node-cell node-next">
+            <span class="cell-label">NEXT</span>
+            <span class="cell-value">#2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connector between nodes: NEXT arrow (left to right) + PREV arrow (right to left) -->
+      <div class="connector-slot is-new" aria-hidden="true" style="--i:1">
+        <svg class="dll-arrows" viewBox="0 0 44 28" xmlns="http://www.w3.org/2000/svg" focusable="false">
+          <g class="arrow arrow-next">
+            <line class="arrow-line" x1="2" y1="9" x2="35" y2="9" pathLength="1" />
+            <polygon class="arrow-head" points="35,4.5 43,9 35,13.5" />
+          </g>
+          <g class="arrow arrow-prev">
+            <line class="arrow-line" x1="42" y1="19" x2="9" y2="19" pathLength="1" />
+            <polygon class="arrow-head" points="9,14.5 1,19 9,23.5" />
+          </g>
+        </svg>
+      </div>
+
+      <!-- NODE 2 -->
+      <div class="node-unit node-enter" data-node-id="2" style="--i:2">
+        <div class="pointer-badges"></div>
+        <div class="node-box">
+          <div class="node-cell node-prev">
+            <span class="cell-label">PREV</span>
+            <span class="cell-value">#1</span>
+          </div>
+          <div class="node-cell node-data">
+            <span class="cell-label">ID #2</span>
+            <span class="cell-value">12</span>
+          </div>
+          <div class="node-cell node-next">
+            <span class="cell-label">NEXT</span>
+            <span class="cell-value">#3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="connector-slot is-new" aria-hidden="true" style="--i:3">
+        <svg class="dll-arrows" viewBox="0 0 44 28" xmlns="http://www.w3.org/2000/svg" focusable="false">
+          <g class="arrow arrow-next">
+            <line class="arrow-line" x1="2" y1="9" x2="35" y2="9" pathLength="1" />
+            <polygon class="arrow-head" points="35,4.5 43,9 35,13.5" />
+          </g>
+          <g class="arrow arrow-prev">
+            <line class="arrow-line" x1="42" y1="19" x2="9" y2="19" pathLength="1" />
+            <polygon class="arrow-head" points="9,14.5 1,19 9,23.5" />
+          </g>
+        </svg>
+      </div>
+
+      <!-- NODE 3 (TAIL) -->
+      <div class="node-unit node-enter from-right" data-node-id="3" style="--i:4">
+        <div class="pointer-badges">
+          <span class="badge badge-tail">TAIL</span>
+        </div>
+        <div class="node-box">
+          <div class="node-cell node-prev">
+            <span class="cell-label">PREV</span>
+            <span class="cell-value">#2</span>
+          </div>
+          <div class="node-cell node-data">
+            <span class="cell-label">ID #3</span>
+            <span class="cell-value">78</span>
+          </div>
+          <div class="node-cell node-next">
+            <span class="cell-label">NEXT</span>
+            <span class="cell-value is-null">NULL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right NULL Terminal -->
+      <div class="null-terminal" id="tail-null">NULL</div>
+
+    </div>
+    </div>
+
+    <!-- AVAIL pool: free nodes waiting to be used (red-marked area) -->
+    <section class="avail-pool" aria-label="AVAIL pool">
+      <div class="avail-head">
+        <h2>AVAIL Pool <span>(Free Nodes)</span></h2>
+        <span class="avail-sub">memory cells waiting to be allocated</span>
+        <span class="avail-count">Free: <strong id="avail-count">5</strong></span>
+      </div>
+      <div class="avail-track" id="avail-list">
+        <span class="avail-ptr">AVAIL</span>
+        <div class="avail-cell"><span class="ac-id">#4</span><span class="ac-next">next #5</span></div>
+        <div class="avail-cell"><span class="ac-id">#5</span><span class="ac-next">next #6</span></div>
+        <div class="avail-cell"><span class="ac-id">#6</span><span class="ac-next">next #7</span></div>
+        <div class="avail-cell"><span class="ac-id">#7</span><span class="ac-next">next #8</span></div>
+        <div class="avail-cell"><span class="ac-id">#8</span><span class="ac-next">next NULL</span></div>
+        <span class="avail-null">NULL</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- Algorithm debugger (green-marked area) -->
+  <aside class="algo-panel" aria-label="Algorithm">
+    <div class="algo-inner">
+      <h2 class="algo-heading">Algorithm<span id="algo-title">Insert at Tail</span></h2>
+
+      <div class="algo-controls">
+        <div class="ctl-row">
+          <button type="button" id="btn-step-reset" class="btn btn-outline" aria-label="Reset operation" title="Restart this operation">&#8635;</button>
+          <button type="button" id="btn-step-prev" class="btn btn-outline" aria-label="Previous step" title="Previous step">&#9198;</button>
+          <button type="button" id="btn-play" class="btn btn-accent" aria-pressed="false">&#9654; Play</button>
+          <button type="button" id="btn-step-next" class="btn btn-outline" aria-label="Next step" title="Next step">&#9197;</button>
+        </div>
+        <div class="ctl-meta">
+          <label class="player-speed" for="speed-select">Speed
+            <select id="speed-select">
+              <option value="0.5">0.5x</option>
+              <option value="1" selected>1x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2">2x</option>
+            </select>
+          </label>
+          <span id="step-counter" class="step-counter">Idle</span>
+        </div>
+        <div class="progress-track"><div id="step-progress" class="progress-fill"></div></div>
+      </div>
+
+      <p id="algo-explain" class="algo-explain">Run an operation above. Its algorithm plays here, one step at a time.</p>
+
+      <ol id="algo-lines" class="algo-lines">
+        <li>if AVAIL = NULL: overflow, stop</li>
+        <li>new &#8592; AVAIL;  AVAIL &#8592; next[new]</li>
+        <li>data[new] &#8592; value;  prev[new] &#8592; NULL;  next[new] &#8592; NULL</li>
+        <li>if head = NULL: head &#8592; tail &#8592; new, stop</li>
+        <li>prev[new] &#8592; tail</li>
+        <li>next[tail] &#8592; new</li>
+        <li>tail &#8592; new</li>
+      </ol>
+    </div>
+  </aside>
+  </div>
+
+  <!-- Traversal Output Strip -->
+  <footer class="traversal-footer">
+    <strong>Traversal Output:</strong>
+    <span id="traversal-output">[ ]</span>
+  </footer>
+
+  <!-- MEMBER 3: operation engine + AVAIL pool + step player (runs fully in the browser) -->
+  <script src="dll-stepper.js" defer></script>
+
+  <!-- MEMBER 4: add your script here, for example:
+       <script src="app.js" defer></script>
+       (left commented on purpose: a missing file would show a 404 error) -->
+</body>
+</html>

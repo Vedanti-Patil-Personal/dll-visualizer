@@ -1,0 +1,1042 @@
+/* ==========================================================================
+   dll-effects.css  -  MEMBER 3 (Visual Design, Animations & Step Player styles)
+   Theme: "Midnight Lavender" - dark purple bento cards, lavender accents,
+   serif-italic headings. Load AFTER raja.css. No HTML ids/classes are renamed.
+
+   Colour language:
+     VIOLET = NEXT pointer (forward)      PINK  = PREV pointer (backward)
+     AMBER  = node / line being worked on
+     GREEN  = visited / success           ROSE  = delete / error
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #0c0a14;
+  --card: #15121f;
+  --card-deep: #100d19;
+  --line: rgba(167, 139, 250, 0.16);
+  --text: #ece9f5;
+  --muted: #9b94b0;
+  --lav: #c4b5fd;
+  --violet: #8b5cf6;
+
+  --dll-next: #a78bfa;
+  --dll-prev: #f472b6;
+  --dll-active: #fbbf24;
+  --dll-ok: #4ade80;
+  --dll-bad: #fb7185;
+  --dll-info: #c4b5fd;
+
+  --dll-dur: 450ms;
+  --dll-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* System fonts only: works offline, no external requests */
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Courier New", monospace;
+}
+
+/* --------------------------------------------------------------------------
+   1. Page + shared card surface
+   -------------------------------------------------------------------------- */
+body {
+  color: var(--text);
+  background:
+    radial-gradient(800px 480px at 0% -10%, rgba(139, 92, 246, 0.2), transparent 65%),
+    radial-gradient(700px 520px at 100% 110%, rgba(244, 114, 182, 0.1), transparent 65%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+.controls-panel,
+.player-bar,
+.workspace .canvas-wrapper,
+.algo-panel,
+.avail-pool,
+.traversal-footer {
+  background-color: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   2. Header: serif-italic title + stat tiles
+   -------------------------------------------------------------------------- */
+.navbar {
+  padding: 1.5rem 1.5rem 1rem;
+  background: transparent;
+  border-bottom: none;
+}
+
+.brand h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.brand h1::before {
+  content: "\21C4";
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #c4b5fd, #8b5cf6);
+  color: #150d2b;
+  font-size: 1.3rem;
+  font-weight: 800;
+  box-shadow: 0 10px 24px -8px rgba(139, 92, 246, 0.8);
+}
+
+.brand h1 em {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--lav);
+}
+
+.subtitle {
+  display: block;
+  margin-top: 0.5rem;
+  padding-left: calc(44px + 0.85rem);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.list-status-bar {
+  gap: 0.75rem;
+}
+
+.status-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  min-width: 100px;
+  padding: 0.75rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background-color: var(--card);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: border-color 250ms ease;
+}
+
+.status-pill::before {
+  display: none;
+}
+
+.status-pill strong {
+  font-family: var(--serif);
+  font-size: 1.75rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  color: var(--lav);
+}
+
+/* --------------------------------------------------------------------------
+   3. Control panel
+   -------------------------------------------------------------------------- */
+.controls-panel {
+  gap: 0.85rem;
+  margin: 0.25rem 1.5rem 1rem;
+  padding: 0.9rem;
+}
+
+/* :last-child twin needed because raja.css strips padding/border from it */
+.control-group,
+.control-group:last-child {
+  padding: 0.6rem;
+  border: none;
+  border-radius: 1rem;
+  background-color: rgba(167, 139, 250, 0.06);
+}
+
+.controls-panel input {
+  width: 126px;
+  padding: 0.5rem 0.55rem;
+  font-size: 0.8rem;
+  border: 1px solid rgba(167, 139, 250, 0.22);
+  border-radius: 0.7rem;
+  background-color: var(--card-deep);
+  color: var(--text);
+  font-family: var(--mono);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.controls-panel input::placeholder {
+  color: #6f6785;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.controls-panel input:focus {
+  border-color: var(--lav);
+  box-shadow: 0 0 0 3px rgba(196, 181, 253, 0.2);
+}
+
+.controls-panel input.input-error {
+  border-color: var(--dll-bad);
+  animation: dll-shake 350ms ease;
+}
+
+/* --------------------------------------------------------------------------
+   4. Buttons
+   -------------------------------------------------------------------------- */
+.btn {
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  border-radius: 0.75rem;
+  background-color: #221c33;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.8);
+  transition: transform 150ms var(--dll-ease), filter 150ms ease,
+              box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.btn-primary {
+  border-color: transparent;
+  background-image: linear-gradient(180deg, #c4b5fd, #8b5cf6);
+  color: #150d2b;
+}
+
+.btn-secondary {
+  border-color: transparent;
+  background-image: linear-gradient(180deg, #8b5cf6, #6d28d9);
+  color: #fff;
+}
+
+.btn-danger {
+  border-color: rgba(251, 113, 133, 0.6);
+  background-color: rgba(251, 113, 133, 0.14);
+  color: #fecdd3;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: rgba(251, 113, 133, 0.28);
+}
+
+.btn-outline {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--lav);
+  background-color: rgba(196, 181, 253, 0.1);
+}
+
+/* traversal buttons carry the direction colours */
+#btn-traverse-forward {
+  border-color: transparent;
+  background-image: linear-gradient(180deg, #a78bfa, #7c3aed);
+  color: #fff;
+}
+
+#btn-traverse-backward {
+  border-color: transparent;
+  background-image: linear-gradient(180deg, #f9a8d4, #ec4899);
+  color: #2a0a1e;
+}
+
+#btn-traverse-forward::after {
+  content: "\2192";
+  margin-left: 0.4rem;
+}
+
+#btn-traverse-backward::before {
+  content: "\2190";
+  margin-right: 0.4rem;
+}
+
+#btn-play {
+  border-color: transparent;
+  background-image: linear-gradient(180deg, #c4b5fd, #8b5cf6);
+  color: #150d2b;
+}
+
+#btn-play.is-playing {
+  background-image: linear-gradient(180deg, #fde68a, #f59e0b);
+  color: #1c1203;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+  filter: brightness(0.95);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible,
+.controls-panel input:focus-visible,
+.player-speed select:focus-visible {
+  outline: 2px solid var(--lav);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   5. Feedback bar: the lavender accent card
+   Member 4 sets one of: is-info | is-success | is-error | is-busy
+   -------------------------------------------------------------------------- */
+.feedback-bar {
+  gap: 1rem;
+  margin: 0 1.5rem 1rem;
+  padding: 1rem 1.25rem;
+  border: none;
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 100%);
+  box-shadow: 0 18px 40px -22px rgba(139, 92, 246, 0.9);
+}
+
+#step-description {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: #1a1030;
+}
+
+.step-badge {
+  flex: none;
+  padding: 0.3rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-color: #1a1030;
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  transition: color 250ms ease, background-color 250ms ease;
+}
+
+.step-badge.is-info    { color: #ddd6fe; }
+.step-badge.is-success { color: #86efac; }
+.step-badge.is-error   { color: #fda4af; }
+
+.step-badge.is-busy {
+  color: #fcd34d;
+  animation: dll-blink 900ms ease-in-out infinite;
+}
+
+#step-description.step-swap {
+  animation: dll-fade-in 300ms ease both;
+}
+
+/* --------------------------------------------------------------------------
+   6. Player bar
+   -------------------------------------------------------------------------- */
+.player-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  margin: 0 1.5rem 1rem;
+  padding: 0.8rem 1.25rem;
+}
+
+.player-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.player-buttons .btn {
+  min-width: 92px;
+}
+
+.player-speed {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.player-speed select {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid rgba(167, 139, 250, 0.22);
+  border-radius: 0.6rem;
+  background-color: var(--card-deep);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  letter-spacing: 0;
+}
+
+.player-progress {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 200px;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background-color: rgba(167, 139, 250, 0.14);
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--dll-next), var(--dll-prev));
+  transition: width 400ms var(--dll-ease);
+}
+
+/* --------------------------------------------------------------------------
+   7. Workspace: canvas + algorithm box
+   -------------------------------------------------------------------------- */
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1rem;
+  flex: 1;
+  margin: 0 1.5rem 1rem;
+}
+
+.workspace .canvas-wrapper {
+  min-height: 300px;
+  margin: 0;
+  padding: 3rem 1.25rem;
+  background-color: var(--card-deep);
+  background-image:
+    radial-gradient(rgba(167, 139, 250, 0.2) 1px, transparent 1.5px),
+    radial-gradient(ellipse at center, rgba(139, 92, 246, 0.1), transparent 70%);
+  background-size: 24px 24px, 100% 100%;
+  scrollbar-color: #3b3257 transparent;
+}
+
+.algo-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.algo-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#algo-title {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--lav);
+}
+
+.algo-lines {
+  counter-reset: line;
+  list-style: none;
+  padding: 0.5rem 0;
+}
+
+.algo-lines li {
+  position: relative;
+  counter-increment: line;
+  padding: 0.7rem 2.2rem 0.7rem 2.7rem;
+  border-left: 3px solid transparent;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #aaa2c2;
+  transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease;
+}
+
+.algo-lines li::before {
+  content: counter(line);
+  position: absolute;
+  left: 1rem;
+  color: #5d5478;
+}
+
+.algo-lines li.is-done {
+  color: #6f6785;
+}
+
+.algo-lines li.is-done::after {
+  content: "\2713";
+  position: absolute;
+  right: 1rem;
+  color: var(--dll-ok);
+}
+
+.algo-lines li.is-active {
+  color: #fef3c7;
+  background-color: rgba(251, 191, 36, 0.12);
+  border-left-color: var(--dll-active);
+  animation: dll-line-in 350ms var(--dll-ease);
+}
+
+.algo-lines li.is-active::before {
+  color: var(--dll-active);
+}
+
+/* --------------------------------------------------------------------------
+   8. Node box
+   -------------------------------------------------------------------------- */
+.node-unit {
+  transition: transform var(--dll-dur) var(--dll-ease), opacity var(--dll-dur) ease;
+}
+
+.node-box {
+  grid-template-columns: 68px 80px 68px;
+  border: 1.5px solid rgba(196, 181, 253, 0.4);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, #1f1a31, #17132a);
+  box-shadow: 0 16px 28px -14px rgba(0, 0, 0, 0.85),
+              0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  transition: border-color 250ms ease, box-shadow 250ms ease, transform 250ms var(--dll-ease);
+}
+
+.node-unit:hover .node-box {
+  border-color: rgba(196, 181, 253, 0.9);
+  transform: translateY(-3px);
+}
+
+.node-cell {
+  padding: 0.85rem 0.35rem;
+  transition: background-color 300ms ease;
+}
+
+.node-prev {
+  background: linear-gradient(180deg, rgba(244, 114, 182, 0.2), rgba(244, 114, 182, 0.05));
+  border-right: 1px solid rgba(244, 114, 182, 0.35);
+}
+
+.node-data {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  border-right: 1px solid rgba(167, 139, 250, 0.4);
+}
+
+.node-next {
+  background: linear-gradient(180deg, rgba(167, 139, 250, 0.24), rgba(167, 139, 250, 0.06));
+}
+
+.cell-label {
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.node-prev .cell-label { color: #f9a8d4; }
+.node-next .cell-label { color: #c4b5fd; }
+
+.cell-value {
+  font-family: var(--mono);
+  transition: color 250ms ease, transform 250ms var(--dll-ease);
+}
+
+.node-data .cell-value {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.node-prev .cell-value { color: #fbcfe8; }
+.node-next .cell-value { color: #ddd6fe; }
+
+.node-cell .cell-value.is-null {
+  color: #6f6785;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   9. Badges, NULL terminals, connectors
+   -------------------------------------------------------------------------- */
+.badge {
+  padding: 0.15rem 0.65rem;
+  border-radius: 999px;
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  color: #fff;
+  animation: dll-pop 350ms var(--dll-ease) both;
+}
+
+.badge-head { background-color: #7c3aed; }
+.badge-tail { background-color: #be185d; }
+
+.badge-current {
+  background-color: #b45309;
+  color: #fef3c7;
+}
+
+/* Arrows / NULL boxes are pushed down by half the badge row so they sit level
+   with the middle of the node box. */
+.null-terminal {
+  margin-top: 1.65rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px dashed rgba(167, 139, 250, 0.4);
+  border-radius: 0.7rem;
+  background-color: rgba(167, 139, 250, 0.05);
+  color: var(--muted);
+  transition: border-color 250ms ease, color 250ms ease;
+}
+
+.null-terminal.is-active {
+  border-color: var(--dll-active);
+  color: var(--dll-active);
+  animation: dll-glow-amber 900ms ease-in-out 2;
+}
+
+.connector-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  margin-top: 1.65rem;
+}
+
+/* --------------------------------------------------------------------------
+   10. Bidirectional SVG arrows
+   -------------------------------------------------------------------------- */
+.dll-arrows {
+  display: block;
+  width: 44px;
+  height: auto;
+  overflow: visible;
+}
+
+.arrow {
+  transition: color 250ms ease, opacity 250ms ease, filter 250ms ease;
+}
+
+.arrow-next { color: var(--dll-next); }
+.arrow-prev { color: var(--dll-prev); }
+
+.arrow-line {
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.arrow-head {
+  fill: currentColor;
+}
+
+/* New connector: arrows draw themselves in (--i staggers left to right) */
+.connector-slot.is-new .arrow-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: dll-draw 500ms var(--dll-ease) forwards;
+  animation-delay: calc(var(--i, 0) * 120ms + 250ms);
+}
+
+.connector-slot.is-new .arrow-prev .arrow-line {
+  animation-delay: calc(var(--i, 0) * 120ms + 370ms);
+}
+
+.connector-slot.is-new .arrow-head {
+  opacity: 0;
+  animation: dll-fade-in 200ms ease forwards;
+  animation-delay: calc(var(--i, 0) * 120ms + 620ms);
+}
+
+/* Re-linking one direction: slot.classList.add('is-relinking','only-next'|'only-prev') */
+.connector-slot.is-relinking .arrow {
+  opacity: 0.25;
+}
+
+.connector-slot.is-relinking.only-next .arrow-next,
+.connector-slot.is-relinking.only-prev .arrow-prev,
+.connector-slot.is-relinking:not(.only-next):not(.only-prev) .arrow {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+/* Traversal: dashes flow in the direction of travel */
+.connector-slot.is-flowing .arrow-line {
+  stroke-dasharray: 5 5;
+  stroke-dashoffset: 0;
+  animation: dll-flow-right 500ms linear infinite;
+  animation-delay: 0ms;
+}
+
+.connector-slot.is-flowing.dir-backward .arrow-line {
+  animation-name: dll-flow-left;
+}
+
+.connector-slot.is-flowing.dir-forward .arrow-prev,
+.connector-slot.is-flowing.dir-backward .arrow-next {
+  opacity: 0.25;
+}
+
+.connector-slot.is-removing {
+  animation: dll-fade-out 350ms ease forwards;
+}
+
+/* --------------------------------------------------------------------------
+   11. Node states (Member 4 toggles these on .node-unit)
+   -------------------------------------------------------------------------- */
+.node-unit.node-enter {
+  animation: dll-node-in var(--dll-dur) var(--dll-ease) both;
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+
+.node-unit.node-enter.from-left  { animation-name: dll-node-in-left; }
+.node-unit.node-enter.from-right { animation-name: dll-node-in-right; }
+
+/* Delete: flash rose, shrink away. Remove the element on 'animationend'. */
+.node-unit.node-exit {
+  animation: dll-node-out 500ms ease forwards;
+  pointer-events: none;
+}
+
+.node-unit.node-exit .node-box {
+  border-color: var(--dll-bad);
+  box-shadow: 0 0 20px rgba(251, 113, 133, 0.55);
+}
+
+.node-unit.node-current .node-box {
+  border-color: var(--dll-active);
+  animation: dll-glow-amber 1000ms ease-in-out infinite;
+}
+
+.node-unit.node-visited .node-box {
+  border-color: var(--dll-ok);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+}
+
+.node-unit.node-found .node-box {
+  border-color: var(--dll-ok);
+  animation: dll-glow-green 800ms ease-in-out 2;
+}
+
+.node-cell.ptr-changed {
+  animation: dll-cell-flash 900ms ease;
+}
+
+.node-cell.ptr-changed .cell-value {
+  animation: dll-pop 500ms var(--dll-ease);
+}
+
+.status-pill.pill-updated {
+  animation: dll-pill 600ms var(--dll-ease);
+}
+
+/* --------------------------------------------------------------------------
+   12. AVAIL pool
+   -------------------------------------------------------------------------- */
+.avail-pool {
+  margin: 0 1.5rem 1rem;
+  padding: 1.1rem 1.25rem 1.3rem;
+}
+
+.avail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.avail-head h2 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.avail-sub {
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--lav);
+}
+
+.avail-count {
+  margin-left: auto;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.avail-count strong {
+  margin-left: 0.4rem;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--lav);
+}
+
+.avail-track {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.avail-ptr,
+.avail-null {
+  padding: 0.35rem 0.75rem;
+  border: 1px dashed rgba(167, 139, 250, 0.4);
+  border-radius: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.avail-ptr {
+  border-style: solid;
+  border-color: var(--dll-active);
+  color: var(--dll-active);
+}
+
+.avail-cell {
+  position: relative;
+  min-width: 64px;
+  padding: 0.6rem 0.9rem;
+  border: 1.5px solid rgba(196, 181, 253, 0.4);
+  border-radius: 0.75rem;
+  background: linear-gradient(180deg, #1f1a31, #17132a);
+  text-align: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  transition: opacity 300ms ease, border-color 300ms ease;
+}
+
+.avail-cell::after {
+  content: "\2192";
+  position: absolute;
+  right: -1.05rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6f6785;
+  font-weight: 400;
+}
+
+.avail-cell.is-taken {
+  opacity: 0.4;
+  border-style: dashed;
+  text-decoration: line-through;
+}
+
+.avail-cell.avail-pulse {
+  border-color: var(--dll-active);
+  animation: dll-glow-amber 900ms ease-in-out 2;
+}
+
+/* --------------------------------------------------------------------------
+   13. Traversal footer
+   -------------------------------------------------------------------------- */
+.traversal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 1.5rem 1.5rem;
+  padding: 1rem 1.25rem;
+}
+
+.traversal-footer strong {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#traversal-output {
+  margin-left: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+  color: var(--lav);
+}
+
+/* --------------------------------------------------------------------------
+   14. Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 1000px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar {
+    padding: 1.25rem 1rem 0.75rem;
+  }
+
+  .brand h1 {
+    font-size: 1.4rem;
+  }
+
+  .subtitle {
+    padding-left: 0;
+  }
+
+  .controls-panel,
+  .player-bar,
+  .feedback-bar,
+  .workspace,
+  .avail-pool,
+  .traversal-footer {
+    margin-left: 0.75rem;
+    margin-right: 0.75rem;
+  }
+
+  .controls-panel input {
+    width: 140px;
+  }
+
+  .workspace .canvas-wrapper {
+    padding: 2rem 1rem;
+  }
+
+  .node-box {
+    grid-template-columns: 64px 78px 64px;
+  }
+
+  .connector-slot {
+    min-width: 44px;
+  }
+
+  .dll-arrows {
+    width: 40px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15. Keyframes
+   -------------------------------------------------------------------------- */
+@keyframes dll-node-in {
+  from { opacity: 0; transform: translateY(-28px) scale(0.85); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dll-node-in-left {
+  from { opacity: 0; transform: translateX(-48px) scale(0.9); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes dll-node-in-right {
+  from { opacity: 0; transform: translateX(48px) scale(0.9); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes dll-node-out {
+  0%   { opacity: 1; transform: scale(1); }
+  35%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 0; transform: translateY(26px) scale(0.6); }
+}
+
+@keyframes dll-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes dll-flow-right {
+  to { stroke-dashoffset: -10; }
+}
+
+@keyframes dll-flow-left {
+  to { stroke-dashoffset: 10; }
+}
+
+@keyframes dll-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes dll-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes dll-pop {
+  0%   { transform: scale(0.6); }
+  60%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+@keyframes dll-pill {
+  0%   { transform: scale(1); border-color: rgba(167, 139, 250, 0.16); }
+  40%  { transform: scale(1.1); border-color: var(--lav); }
+  100% { transform: scale(1); border-color: rgba(167, 139, 250, 0.16); }
+}
+
+@keyframes dll-cell-flash {
+  0%   { background-color: rgba(251, 191, 36, 0.55); }
+  100% { background-color: transparent; }
+}
+
+@keyframes dll-glow-amber {
+  0%, 100% { box-shadow: 0 0 6px rgba(251, 191, 36, 0.35); }
+  50%      { box-shadow: 0 0 22px rgba(251, 191, 36, 0.85); }
+}
+
+@keyframes dll-glow-green {
+  0%, 100% { box-shadow: 0 0 6px rgba(74, 222, 128, 0.35); }
+  50%      { box-shadow: 0 0 22px rgba(74, 222, 128, 0.85); }
+}
+
+@keyframes dll-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+@keyframes dll-shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-4px); }
+  75%      { transform: translateX(4px); }
+}
+
+@keyframes dll-line-in {
+  from { transform: translateX(-10px); opacity: 0.4; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   16. Respect the system "reduce motion" setting.
+   Durations collapse to ~0 so 'animationend' still fires for Member 4's code.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
