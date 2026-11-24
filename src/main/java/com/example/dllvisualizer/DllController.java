@@ -78,4 +78,20 @@ public class DllController {
                 new DllResponseDto(true, "Doubly Linked List cleared successfully!", dll.size(), dll.getSnapshotNodes(null), steps)
         );
     }
+
+    @GetMapping("/traverse-forward-steps")
+    public ResponseEntity<DllResponseDto> traverseForwardSteps() {
+        List<OperationStepDto> steps = dll.traverseForwardSteps();
+        return ResponseEntity.ok(
+                new DllResponseDto(true, "Forward traversal steps generated.", dll.size(), dll.getSnapshotNodes(null), steps)
+        );
+    }
+
+    @GetMapping("/traverse-backward-steps")
+    public ResponseEntity<DllResponseDto> traverseBackwardSteps() {
+        List<OperationStepDto> steps = dll.traverseBackwardSteps();
+        return ResponseEntity.ok(
+                new DllResponseDto(true, "Backward traversal steps generated.", dll.size(), dll.getSnapshotNodes(null), steps)
+        );
+    }
 }

@@ -11,6 +11,29 @@ public class OperationStepDto {
     private final Integer tailId;
     private final Integer currentId;
     private final Integer highlightedNodeId;
+    private final Integer algorithmLine;
+
+    public OperationStepDto(
+            int stepNumber,
+            String actionType,
+            String description,
+            List<NodeStateDto> nodes,
+            Integer headId,
+            Integer tailId,
+            Integer currentId,
+            Integer highlightedNodeId,
+            Integer algorithmLine
+    ) {
+        this.stepNumber = stepNumber;
+        this.actionType = actionType;
+        this.description = description;
+        this.nodes = nodes;
+        this.headId = headId;
+        this.tailId = tailId;
+        this.currentId = currentId;
+        this.highlightedNodeId = highlightedNodeId;
+        this.algorithmLine = algorithmLine;
+    }
 
     public OperationStepDto(
             int stepNumber,
@@ -22,14 +45,7 @@ public class OperationStepDto {
             Integer currentId,
             Integer highlightedNodeId
     ) {
-        this.stepNumber = stepNumber;
-        this.actionType = actionType;
-        this.description = description;
-        this.nodes = nodes;
-        this.headId = headId;
-        this.tailId = tailId;
-        this.currentId = currentId;
-        this.highlightedNodeId = highlightedNodeId;
+        this(stepNumber, actionType, description, nodes, headId, tailId, currentId, highlightedNodeId, null);
     }
 
     public int getStepNumber() {
@@ -62,5 +78,9 @@ public class OperationStepDto {
 
     public Integer getHighlightedNodeId() {
         return highlightedNodeId;
+    }
+
+    public Integer getAlgorithmLine() {
+        return algorithmLine;
     }
 }
